@@ -1,0 +1,549 @@
+# glTF Viewer 프로젝트 사양서
+
+project:
+  name: "glTF Viewer"
+  version: "0.1.0"
+  description: "3D glTF 모델을 웹에서 시각화하고 조작할 수 있는 뷰어 애플리케이션"
+  framework: "Next.js 15.2.4"
+  language: "TypeScript"
+
+# 기술 스택
+tech_stack:
+  frontend:
+    - "React 19"
+    - "TypeScript"
+    - "Tailwind CSS"
+    - "Radix UI Components"
+  3d_rendering:
+    - "Three.js"
+    - "@react-three/fiber"
+    - "@react-three/drei"
+  development:
+    - "Next.js"
+    - "pnpm"
+    - "ESLint"
+
+# 주요 기능
+features:
+  core:
+    - id: "file-upload"
+      name: "glTF 파일 업로드"
+      description: "드래그 앤 드롭 또는 파일 선택을 통한 glTF/GLB 파일 업로드"
+      status: "implemented"
+      priority: "completed"
+      
+    - id: "3d-viewer"
+      name: "3D 모델 뷰어"
+      description: "업로드된 glTF 모델의 3D 렌더링 및 인터랙티브 조작 (최적화된 초기 자동 조정)"
+      status: "implemented"
+      priority: "completed"
+      updates:
+        - "2025-01-20: Information pane 이벤트 격리 처리로 의도하지 않은 카메라 확대 문제 해결"
+        - "2025-01-20: Stage adjustCamera 비활성화 및 OrbitControls 개선으로 카메라 리셋 문제 해결"
+        - "2025-01-20: 모델 크기에 기반한 자동 카메라 위치 조정 구현"
+        - "2025-01-20: 3D 뷰어 OrbitControls 제어 문제 해결 - 단순화된 카메라 피팅 적용"
+        - "2025-01-20: Stage adjustCamera를 로딩 시에만 활성화하여 최적의 초기 뷰 제공"
+      
+    - id: "theme-support"
+      name: "테마 지원"
+      description: "다크/라이트 테마 전환 기능"
+      status: "implemented"
+      priority: "completed"
+
+  information_display:
+    - id: "model-info-panel"
+      name: "모델 정보 표시 패널"
+      description: "파일 메타데이터, 구조 정보, 성능 데이터, 애니메이션 정보, 확장 기능 표시"
+      status: "implemented"
+      priority: "high"
+      components:
+        - "ModelMetadata"
+        - "StructureInfo"
+        - "ExtensionList"
+        - "PerformanceStats"
+        - "AnimationInfo"
+      
+    - id: "scene-graph-viewer"
+      name: "씬 그래프 트리 뷰어"
+      description: "3D 모델의 노드 계층 구조를 트리 형태로 시각화"
+      status: "implemented"
+      priority: "medium"
+      components:
+        - "SceneTreeView"
+        - "NodeDetails"
+        - "VisibilityToggle"
+        - "NodeHighlight"
+      
+    - id: "material-texture-info"
+      name: "재질 및 텍스처 정보"
+      description: "PBR 재질 속성과 텍스처 이미지 미리보기"
+      status: "implemented"
+      priority: "medium"
+      components:
+        - "MaterialPanel"
+        - "TextureGallery"
+        - "PBRVisualizer"
+        - "TextureDetails"
+
+  rendering_options:
+    - id: "advanced-rendering"
+      name: "상세 렌더링 옵션"
+      description: "와이어프레임, 조명 제어, 바운딩박스, 노멀벡터, 그리드 등 고급 시각화"
+      status: "partially_implemented"
+      priority: "high"
+      components:
+        - "WireframeToggle"
+        - "LightingControls"
+        - "BoundingBoxView"
+        - "NormalVectorView"
+        - "GridAndAxis"
+      
+    - id: "camera-controls"
+      name: "고급 카메라 제어"
+      description: "정밀 변환 컨트롤과 카메라 프리셋"
+      status: "planned"
+      priority: "medium"
+      components:
+        - "PrecisionControls"
+        - "CameraPresets"
+        - "ViewportSettings"
+
+  performance_monitoring:
+    - id: "performance-display"
+      name: "성능 모니터링"
+      description: "FPS, 메모리 사용량, 렌더링 통계 실시간 표시"
+      status: "planned"
+      priority: "low"
+      components:
+        - "FPSCounter"
+        - "MemoryMonitor"
+        - "RenderStats"
+        - "OptimizationSuggestions"
+
+  animation_controls:
+    - id: "animation-player"
+      name: "애니메이션 제어"
+      description: "재생/일시정지, 속도 조절, 프레임별 이동"
+      status: "planned"
+      priority: "high"
+      components:
+        - "AnimationPlayer"
+        - "TimelineController"
+        - "SpeedControls"
+        - "FrameNavigation"
+
+  export_tools:
+    - id: "screenshot-export"
+      name: "스크린샷 및 내보내기"
+      description: "현재 뷰 이미지 저장 및 다양한 포맷 내보내기"
+      status: "planned"
+      priority: "medium"
+      components:
+        - "ScreenshotCapture"
+        - "ExportOptions"
+        - "QualitySettings"
+
+  comparison_tools:
+    - id: "model-comparison"
+      name: "모델 비교 도구"
+      description: "두 개 모델 동시 로드, 비교, 변경사항 추적"
+      status: "planned"
+      priority: "low"
+      components:
+        - "DualModelLoader"
+        - "ComparisonView"
+        - "ChangeTracker"
+        - "ValidationReport"
+
+# 컴포넌트 구조
+components:
+  core:
+    - name: "FileDropZone"
+      path: "components/file-drop-zone.tsx"
+      description: "파일 업로드를 위한 드래그 앤 드롭 영역"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "ModelViewer"
+      path: "components/model-viewer.tsx"
+      description: "3D 모델 렌더링 및 인터랙션 처리"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "ThemeProvider"
+      path: "components/theme-provider.tsx"
+      description: "테마 관리 및 제공"
+      size_limit: "1KB"
+      status: "implemented"
+
+  information_panels:
+    - name: "ModelMetadata"
+      path: "components/info/model-metadata.tsx"
+      description: "파일명, 크기, 버전 등 기본 메타데이터 표시"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "StructureInfo"
+      path: "components/info/structure-info.tsx"
+      description: "노드, 메시, 재질, 텍스처 수량 정보"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "PerformanceStats"
+      path: "components/info/performance-stats.tsx"
+      description: "폴리곤 수, 정점 수, 텍스처 해상도 정보"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "AnimationInfo"
+      path: "components/info/animation-info.tsx"
+      description: "애니메이션 클립 정보 및 재생 시간"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "ExtensionList"
+      path: "components/info/extension-list.tsx"
+      description: "사용된 glTF 확장 기능 목록 표시"
+      size_limit: "1KB"
+      status: "implemented"
+
+  scene_graph:
+    - name: "SceneTreeView"
+      path: "components/scene/scene-tree-view.tsx"
+      description: "노드 계층 구조 트리 표시"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "NodeDetails"
+      path: "components/scene/node-details.tsx"
+      description: "선택된 노드의 상세 정보"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "VisibilityToggle"
+      path: "components/scene/visibility-toggle.tsx"
+      description: "노드별 표시/숨김 제어"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "NodeHighlight"
+      path: "components/scene/node-highlight.tsx"
+      description: "선택된 노드 하이라이트 기능"
+      size_limit: "1KB"
+      status: "planned"
+
+  materials:
+    - name: "MaterialPanel"
+      path: "components/materials/material-panel.tsx"
+      description: "재질 속성 정보 표시"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "TextureGallery"
+      path: "components/materials/texture-gallery.tsx"
+      description: "텍스처 이미지 썸네일 갤러리"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "PBRVisualizer"
+      path: "components/materials/pbr-visualizer.tsx"
+      description: "PBR 재질 속성 시각화"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "TextureDetails"
+      path: "components/materials/texture-details.tsx"
+      description: "텍스처 상세 정보 (해상도, 포맷 등)"
+      size_limit: "1KB"
+      status: "implemented"
+
+  rendering:
+    - name: "WireframeToggle"
+      path: "components/rendering/wireframe-toggle.tsx"
+      description: "와이어프레임 모드 토글"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "BoundingBoxView"
+      path: "components/rendering/bounding-box-view.tsx"
+      description: "바운딩 박스 표시"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "NormalVectorView"
+      path: "components/rendering/normal-vector-view.tsx"
+      description: "노멀 벡터 시각화"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "GridAndAxis"
+      path: "components/rendering/grid-and-axis.tsx"
+      description: "3D 그리드 및 축 표시"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "LightingControls"
+      path: "components/rendering/lighting-controls.tsx"
+      description: "조명 설정 제어 (강도, 환경광, 환경 조명, 방향성 조명, 색온도)"
+      size_limit: "1KB"
+      status: "implemented"
+
+  camera:
+    - name: "PrecisionControls"
+      path: "components/camera/precision-controls.tsx"
+      description: "정밀 위치/회전/크기 조정"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "CameraPresets"
+      path: "components/camera/camera-presets.tsx"
+      description: "미리 정의된 카메라 시점"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "ViewportSettings"
+      path: "components/camera/viewport-settings.tsx"
+      description: "뷰포트 설정 및 옵션"
+      size_limit: "1KB"
+      status: "planned"
+
+  performance:
+    - name: "FPSCounter"
+      path: "components/performance/fps-counter.tsx"
+      description: "실시간 FPS 표시"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "MemoryMonitor"
+      path: "components/performance/memory-monitor.tsx"
+      description: "메모리 사용량 모니터링"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "RenderStats"
+      path: "components/performance/render-stats.tsx"
+      description: "렌더링 통계 정보"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "OptimizationSuggestions"
+      path: "components/performance/optimization-suggestions.tsx"
+      description: "성능 최적화 제안"
+      size_limit: "1KB"
+      status: "planned"
+
+  animation:
+    - name: "AnimationPlayer"
+      path: "components/animation/animation-player.tsx"
+      description: "애니메이션 재생 제어"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "TimelineController"
+      path: "components/animation/timeline-controller.tsx"
+      description: "타임라인 조작 도구"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "SpeedControls"
+      path: "components/animation/speed-controls.tsx"
+      description: "재생 속도 조절"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "FrameNavigation"
+      path: "components/animation/frame-navigation.tsx"
+      description: "프레임별 이동 컨트롤"
+      size_limit: "1KB"
+      status: "planned"
+
+  export:
+    - name: "ScreenshotCapture"
+      path: "components/export/screenshot-capture.tsx"
+      description: "현재 뷰 스크린샷 캡처"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "ExportOptions"
+      path: "components/export/export-options.tsx"
+      description: "다양한 내보내기 옵션"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "QualitySettings"
+      path: "components/export/quality-settings.tsx"
+      description: "내보내기 품질 설정"
+      size_limit: "1KB"
+      status: "planned"
+
+  comparison:
+    - name: "DualModelLoader"
+      path: "components/comparison/dual-model-loader.tsx"
+      description: "두 개 모델 동시 로드"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "ComparisonView"
+      path: "components/comparison/comparison-view.tsx"
+      description: "모델 비교 뷰"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "ChangeTracker"
+      path: "components/comparison/change-tracker.tsx"
+      description: "변경사항 추적 도구"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "ValidationReport"
+      path: "components/comparison/validation-report.tsx"
+      description: "glTF 표준 준수 검증 리포트"
+      size_limit: "1KB"
+      status: "planned"
+
+  layout:
+    - name: "InfoSidebar"
+      path: "components/layout/info-sidebar.tsx"
+      description: "정보 패널들을 수납하는 사이드바"
+      size_limit: "1KB"
+      status: "implemented"
+      
+    - name: "ToolbarPanel"
+      path: "components/layout/toolbar-panel.tsx"
+      description: "상단 도구 모음"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "StatusBar"
+      path: "components/layout/status-bar.tsx"
+      description: "하단 상태 표시줄"
+      size_limit: "1KB"
+      status: "planned"
+
+# 개발 가이드라인
+guidelines:
+  file_size:
+    max_size: "1KB"
+    description: "각 소스 파일은 1KB를 초과하지 않도록 작은 단위로 분리"
+    
+  naming:
+    convention: "kebab-case"
+    description: "파일명은 기능을 유추할 수 있도록 명확하게 작성"
+    
+  architecture:
+    pattern: "component-based"
+    description: "기능별로 컴포넌트를 분리하여 재사용성과 유지보수성 향상"
+
+# 할 일 목록
+todo:
+  phase_1_high_priority:
+    - "✅ 기존 컴포넌트 리팩토링 (1KB 제한 준수)"
+    - "✅ ModelMetadata 컴포넌트 구현"
+    - "✅ StructureInfo 컴포넌트 구현"
+    - "✅ WireframeToggle 기능 추가"
+    - "✅ AnimationPlayer 기본 기능 구현"
+    - "✅ InfoSidebar 레이아웃 컴포넌트 구현"
+    - "✅ Information pane 이벤트 격리 (카메라 확대 문제 해결)"
+    - "✅ 카메라 리셋 문제 해결 (안정적인 3D 조작 구현)"
+    
+  phase_2_medium_priority:
+    - "✅ SceneTreeView 트리 구조 표시"
+    - "✅ MaterialPanel 재질 정보 표시"
+    - "✅ TextureGallery 텍스처 미리보기"
+    - "✅ LightingControls 조명 설정 제어"
+    - "✅ ExtensionList glTF 확장 기능 목록"
+    - "BoundingBoxView 바운딩 박스 표시"
+    - "GridAndAxis 3D 그리드 및 축"
+    - "PrecisionControls 정밀 조작"
+    - "CameraPresets 카메라 프리셋"
+    - "ScreenshotCapture 스크린샷 기능"
+    
+  phase_3_low_priority:
+    - "FPSCounter 성능 모니터링"
+    - "MemoryMonitor 메모리 추적"
+    - "DualModelLoader 모델 비교"
+    - "ValidationReport 검증 도구"
+    - "OptimizationSuggestions 최적화 제안"
+    - "ChangeTracker 변경사항 추적"
+
+# 구현 로드맵
+roadmap:
+  v0.2.0:
+    focus: "정보 표시 기능 강화"
+    features:
+      - "모델 메타데이터 표시"
+      - "구조 정보 패널"
+      - "기본 렌더링 옵션 (와이어프레임)"
+      - "사이드바 레이아웃"
+    deadline: "2025-06-01"
+    
+  v0.3.0:
+    focus: "3D 조작 및 씬 그래프"
+    features:
+      - "씬 그래프 트리 뷰어"
+      - "노드 선택 및 하이라이트"
+      - "고급 카메라 제어"
+      - "애니메이션 기본 제어"
+    deadline: "2025-07-01"
+    
+  v0.4.0:
+    focus: "재질 및 텍스처 분석"
+    features:
+      - "재질 속성 표시"
+      - "텍스처 갤러리"
+      - "PBR 시각화"
+      - "고급 렌더링 옵션"
+    deadline: "2025-08-01"
+    
+  v0.5.0:
+    focus: "성능 및 내보내기"
+    features:
+      - "성능 모니터링"
+      - "스크린샷 기능"
+      - "내보내기 옵션"
+      - "최적화 제안"
+    deadline: "2025-09-01"
+    
+  v1.0.0:
+    focus: "비교 도구 및 고급 기능"
+    features:
+      - "모델 비교 기능"
+      - "검증 도구"
+      - "변경사항 추적"
+      - "전체 기능 통합 및 최적화"
+    deadline: "2025-10-01"
+
+# 기술적 고려사항
+technical_considerations:
+  performance:
+    - "대용량 모델 로딩 시 메모리 최적화"
+    - "복잡한 씬의 렌더링 성능 최적화"
+    - "실시간 정보 업데이트 시 UI 반응성 유지"
+    
+  usability:
+    - "정보 패널의 접기/펼치기 기능"
+    - "모바일 환경에서의 반응형 디자인"
+    - "키보드 단축키 지원"
+    - "접근성 (스크린 리더 호환)"
+    
+  architecture:
+    - "컴포넌트 간 상태 관리 (Zustand 도입 검토)"
+    - "3D 씬 데이터의 효율적 관리"
+    - "플러그인 형태의 확장 가능한 구조"
+    - "타입 안정성을 위한 엄격한 TypeScript 적용"
+
+# 품질 보증
+quality_assurance:
+  testing:
+    - "각 컴포넌트별 단위 테스트"
+    - "사용자 시나리오 기반 통합 테스트"
+    - "다양한 glTF 모델 파일 호환성 테스트"
+    - "성능 벤치마크 테스트"
+    
+  code_review:
+    - "1KB 파일 크기 제한 준수 확인"
+    - "컴포넌트 간 의존성 최소화"
+    - "명명 규칙 일관성 검토"
+    - "메모리 누수 방지 체크"
+
+# %%%%%LAST%%%%%
