@@ -153,28 +153,70 @@ export async function getTextureInfo(texture: THREE.Texture, mapType: string, ma
 
   // Get texture dimensions
   if (texture.image) {
-    info.width = texture.image.width || texture.image.videoWidth
-    info.height = texture.image.height || texture.image.videoHeight
+    info.width = texture.image.width || texture.image.videoWidth || texture.image.naturalWidth
+    info.height = texture.image.height || texture.image.videoHeight || texture.image.naturalHeight
+  }
+
+  // Debug logging in development - only once per texture
+  if (process.env.NODE_ENV === 'development' && !texture.userData?.debugLogged) {
+    console.log('Processing texture:', {
+      name: info.name,
+      mapType,
+      hasSource: !!texture.source,
+      hasImage: !!texture.image,
+      sourceType: texture.source?.data?.constructor?.name,
+      imageType: texture.image?.constructor?.name,
+      width: info.width,
+      height: info.height
+    })
+    texture.userData = texture.userData || {}
+    texture.userData.debugLogged = true
   }
 
   // Generate data URL for preview
   try {
+    let dataUrl: string | null = null
+    
+    // Try different methods to extract texture data
     if (texture.source?.data) {
-      if (texture.source.data instanceof HTMLImageElement) {
-        info.url = texture.source.data.src
-        info.dataUrl = convertImageToDataUrl(texture.source.data)
-      } else if (texture.source.data instanceof HTMLCanvasElement) {
-        info.dataUrl = texture.source.data.toDataURL()
-      } else if (texture.source.data instanceof ImageData) {
-        info.dataUrl = convertImageDataToDataUrl(texture.source.data)
-      } else {
-        // For other data types, try to render using WebGL
-        info.dataUrl = await createTextureDataUrlFromWebGL(texture)
+      const sourceData = texture.source.data
+      
+      if (sourceData instanceof HTMLImageElement) {
+        // Direct image element
+        if (sourceData.src && sourceData.complete) {
+          info.url = sourceData.src
+          dataUrl = convertImageToDataUrl(sourceData)
+        }
+      } else if (sourceData instanceof HTMLCanvasElement) {
+        // Canvas element
+        dataUrl = sourceData.toDataURL('image/png')
+      } else if (sourceData instanceof ImageData) {
+        // Raw image data
+        dataUrl = convertImageDataToDataUrl(sourceData)
+      } else if (sourceData instanceof ImageBitmap) {
+        // ImageBitmap - need to convert to canvas first
+        dataUrl = convertImageBitmapToDataUrl(sourceData)
       }
-    } else {
-      // Fallback: create a placeholder or try to extract from texture
-      info.dataUrl = createTextureDataUrl(texture)
     }
+    
+    // Try to get from texture.image as fallback
+    if (!dataUrl && texture.image) {
+      const image = texture.image
+      
+      if (image instanceof HTMLImageElement && image.complete && image.src) {
+        dataUrl = convertImageToDataUrl(image)
+      } else if (image instanceof HTMLCanvasElement) {
+        dataUrl = image.toDataURL('image/png')
+      } else if (image instanceof ImageData) {
+        dataUrl = convertImageDataToDataUrl(image)
+      } else if (image instanceof ImageBitmap) {
+        dataUrl = convertImageBitmapToDataUrl(image)
+      }
+    }
+    
+    // Set the final data URL or fallback to placeholder
+    info.dataUrl = dataUrl || createPlaceholderDataUrl(formatMapType(mapType))
+    
   } catch (error) {
     console.warn('Failed to generate texture preview:', error)
     info.dataUrl = createPlaceholderDataUrl(formatMapType(mapType))
@@ -183,17 +225,63 @@ export async function getTextureInfo(texture: THREE.Texture, mapType: string, ma
   return info
 }
 
-function convertImageToDataUrl(image: HTMLImageElement): string {
-  const canvas = document.createElement('canvas')
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return ''
-
-  canvas.width = Math.min(image.width || 256, 512)
-  canvas.height = Math.min(image.height || 256, 512)
-  
+function convertImageBitmapToDataUrl(imageBitmap: ImageBitmap): string {
   try {
-    ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return ''
+
+    // Use original size if small enough, otherwise scale down
+    const maxSize = 512
+    let { width, height } = imageBitmap
+    
+    if (width > maxSize || height > maxSize) {
+      const ratio = Math.min(maxSize / width, maxSize / height)
+      width = Math.floor(width * ratio)
+      height = Math.floor(height * ratio)
+    }
+    
+    canvas.width = width
+    canvas.height = height
+    
+    // Draw the ImageBitmap to canvas
+    ctx.drawImage(imageBitmap, 0, 0, width, height)
     return canvas.toDataURL('image/png')
+    
+  } catch (error) {
+    console.warn('Failed to convert ImageBitmap to data URL:', error)
+    return ''
+  }
+}
+
+function convertImageToDataUrl(image: HTMLImageElement): string {
+  try {
+    // Check if image is loaded and valid
+    if (!image.complete || !image.naturalWidth || !image.naturalHeight) {
+      return ''
+    }
+
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return ''
+
+    // Use original size if small enough, otherwise scale down
+    const maxSize = 512
+    let { width, height } = image
+    
+    if (width > maxSize || height > maxSize) {
+      const ratio = Math.min(maxSize / width, maxSize / height)
+      width = Math.floor(width * ratio)
+      height = Math.floor(height * ratio)
+    }
+    
+    canvas.width = width
+    canvas.height = height
+    
+    // Set cross-origin handling for external images
+    ctx.drawImage(image, 0, 0, width, height)
+    return canvas.toDataURL('image/png')
+    
   } catch (error) {
     console.warn('Failed to convert image to data URL:', error)
     return ''
@@ -214,47 +302,29 @@ function convertImageDataToDataUrl(imageData: ImageData): string {
 
 function createTextureDataUrlFromWebGL(texture: THREE.Texture): Promise<string> {
   return new Promise((resolve) => {
-    // Create a temporary renderer to read texture data
-    const renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true })
-    const scene = new THREE.Scene()
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
-    
-    // Create a plane with the texture
-    const geometry = new THREE.PlaneGeometry(2, 2)
-    const material = new THREE.MeshBasicMaterial({ map: texture })
-    const plane = new THREE.Mesh(geometry, material)
-    scene.add(plane)
-    
-    const size = 256
-    renderer.setSize(size, size)
-    renderer.render(scene, camera)
-    
-    // Extract image data from renderer
-    const canvas = renderer.domElement
-    const dataUrl = canvas.toDataURL('image/png')
-    
-    // Cleanup
-    renderer.dispose()
-    geometry.dispose()
-    material.dispose()
-    
-    resolve(dataUrl)
+    try {
+      // Skip WebGL rendering for now due to context limit issues
+      // Instead, use the fallback method
+      resolve(createPlaceholderDataUrl('Texture'))
+    } catch (error) {
+      console.warn('WebGL texture extraction failed:', error)
+      resolve(createPlaceholderDataUrl('Texture'))
+    }
   })
 }
 
 function createTextureDataUrl(texture: THREE.Texture): string {
   // Try to access image directly
   if (texture.image) {
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return createPlaceholderDataUrl('Texture')
-
-    const size = 256
-    canvas.width = size
-    canvas.height = size
-
     try {
       if (texture.image instanceof HTMLImageElement || texture.image instanceof HTMLCanvasElement) {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return createPlaceholderDataUrl('Texture')
+
+        const size = 256
+        canvas.width = size
+        canvas.height = size
         ctx.drawImage(texture.image, 0, 0, size, size)
         return canvas.toDataURL('image/png')
       } else if (texture.image instanceof ImageData) {
@@ -265,8 +335,16 @@ function createTextureDataUrl(texture: THREE.Texture): string {
           tempCanvas.width = texture.image.width
           tempCanvas.height = texture.image.height
           tempCtx.putImageData(texture.image, 0, 0)
-          ctx.drawImage(tempCanvas, 0, 0, size, size)
-          return canvas.toDataURL('image/png')
+          
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            const size = 256
+            canvas.width = size
+            canvas.height = size
+            ctx.drawImage(tempCanvas, 0, 0, size, size)
+            return canvas.toDataURL('image/png')
+          }
         }
       }
     } catch (error) {

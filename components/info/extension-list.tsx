@@ -28,22 +28,6 @@ export function ExtensionList({ extensions, modelData }: ExtensionListProps) {
   const extractedExtensions = useMemo(() => {
     return extensions || extractExtensionsFromModel(modelData)
   }, [extensions, modelData])
-  
-  if (!extractedExtensions || extractedExtensions.length === 0) {
-    return (
-      <Card className="w-full">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Package className="w-4 h-4" />
-            Extensions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">No extensions found</p>
-        </CardContent>
-      </Card>
-    )
-  }
 
   const groupedExtensions = useMemo(() => {
     return groupExtensionsByCategory(extractedExtensions)
@@ -61,6 +45,22 @@ export function ExtensionList({ extensions, modelData }: ExtensionListProps) {
       newExpanded.add(category)
     }
     setExpandedCategories(newExpanded)
+  }
+  
+  if (!extractedExtensions || extractedExtensions.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Package className="w-4 h-4" />
+            Extensions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No extensions found</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
