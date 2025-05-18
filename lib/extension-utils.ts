@@ -221,14 +221,19 @@ export function categorizeExtension(name: string): { category: ExtensionCategory
 export function extractExtensionsFromModel(modelData: any): GLTFExtension[] {
   if (!modelData) return []
 
-  console.log('Extracting extensions from model data:', modelData)
+  // Only log in development mode and not too frequently
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Extracting extensions from model data:', modelData)
+  }
 
   const extensions: GLTFExtension[] = []
   const foundExtensions = new Set<string>()
 
   // Check extensionsUsed
   if (modelData.extensionsUsed && Array.isArray(modelData.extensionsUsed)) {
-    console.log('Found extensionsUsed:', modelData.extensionsUsed)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Found extensionsUsed:', modelData.extensionsUsed)
+    }
     modelData.extensionsUsed.forEach((name: string) => {
       if (!foundExtensions.has(name)) {
         const { category, level } = categorizeExtension(name)
@@ -248,7 +253,9 @@ export function extractExtensionsFromModel(modelData: any): GLTFExtension[] {
 
   // Check extensionsRequired
   if (modelData.extensionsRequired && Array.isArray(modelData.extensionsRequired)) {
-    console.log('Found extensionsRequired:', modelData.extensionsRequired)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Found extensionsRequired:', modelData.extensionsRequired)
+    }
     modelData.extensionsRequired.forEach((name: string) => {
       if (!foundExtensions.has(name)) {
         const { category, level } = categorizeExtension(name)
@@ -272,7 +279,9 @@ export function extractExtensionsFromModel(modelData: any): GLTFExtension[] {
 
   // Also check for extensions in the extensions object directly
   if (modelData.extensions && typeof modelData.extensions === 'object') {
-    console.log('Found extensions object:', Object.keys(modelData.extensions))
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Found extensions object:', Object.keys(modelData.extensions))
+    }
     Object.keys(modelData.extensions).forEach((name: string) => {
       if (!foundExtensions.has(name)) {
         const { category, level } = categorizeExtension(name)
@@ -290,7 +299,9 @@ export function extractExtensionsFromModel(modelData: any): GLTFExtension[] {
     })
   }
 
-  console.log('Final extracted extensions:', extensions)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Final extracted extensions:', extensions)
+  }
 
   return extensions.sort((a, b) => {
     // Required extensions first, then alphabetical

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -25,7 +25,9 @@ export function ExtensionList({ extensions, modelData }: ExtensionListProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['official', 'vrm']))
   
   // Extract extensions from modelData if not provided
-  const extractedExtensions = extensions || extractExtensionsFromModel(modelData)
+  const extractedExtensions = useMemo(() => {
+    return extensions || extractExtensionsFromModel(modelData)
+  }, [extensions, modelData])
   
   if (!extractedExtensions || extractedExtensions.length === 0) {
     return (
@@ -43,8 +45,13 @@ export function ExtensionList({ extensions, modelData }: ExtensionListProps) {
     )
   }
 
-  const groupedExtensions = groupExtensionsByCategory(extractedExtensions)
-  const requiredExtensions = extractedExtensions.filter(ext => ext.required)
+  const groupedExtensions = useMemo(() => {
+    return groupExtensionsByCategory(extractedExtensions)
+  }, [extractedExtensions])
+  
+  const requiredExtensions = useMemo(() => {
+    return extractedExtensions.filter(ext => ext.required)
+  }, [extractedExtensions])
 
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories)
