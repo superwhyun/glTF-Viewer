@@ -23,7 +23,7 @@ export function DropZoneContent({ isDragging, error, onFileDrop }: DropZoneConte
       </h3>
       
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        Supports GLTF and GLB file formats
+        Supports GLTF, GLB, VRM, and VRMA file formats
       </p>
 
       {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
@@ -35,7 +35,7 @@ export function DropZoneContent({ isDragging, error, onFileDrop }: DropZoneConte
           <input
             type="file"
             className="hidden"
-            accept=".gltf,.glb,model/gltf-binary,model/gltf+json"
+            accept=".gltf,.glb,.vrm,.vrma,model/gltf-binary,model/gltf+json"
             onChange={(e) => handleFileChange(e, onFileDrop)}
           />
         </label>

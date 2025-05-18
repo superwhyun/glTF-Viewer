@@ -128,6 +128,24 @@ export function InfoSidebar({
           {/* Extension List */}
           <ExtensionList modelData={modelData} />
           
+          {/* Animation Player */}
+          {animationData && (
+            <AnimationPlayer
+              animations={animationData.animations || []}
+              currentAnimation={animationData.currentAnimation}
+              isPlaying={animationData.isPlaying || false}
+              currentTime={animationData.currentTime || 0}
+              playbackSpeed={animationData.playbackSpeed || 1}
+              onPlay={onAnimationControl?.onPlay || (() => {})}
+              onPause={onAnimationControl?.onPause || (() => {})}
+              onStop={onAnimationControl?.onStop || (() => {})}
+              onAnimationChange={onAnimationControl?.onAnimationChange || (() => {})}
+              onTimeChange={onAnimationControl?.onTimeChange || (() => {})}
+              onSpeedChange={onAnimationControl?.onSpeedChange || (() => {})}
+              onAnimationFileDrop={onAnimationControl?.onAnimationFileDrop}
+            />
+          )}
+          
           {/* Lighting Controls */}
           {lightingData && (
             <LightingControls
@@ -184,23 +202,6 @@ export function InfoSidebar({
           {/* Node Details */}
           {sceneGraphData && (
             <NodeDetails selectedNode={selectedNodeObject} />
-          )}
-          
-          {/* Animation Player */}
-          {animationData && (
-            <AnimationPlayer
-              animations={animationData.animations || []}
-              currentAnimation={animationData.currentAnimation}
-              isPlaying={animationData.isPlaying || false}
-              currentTime={animationData.currentTime || 0}
-              playbackSpeed={animationData.playbackSpeed || 1}
-              onPlay={onAnimationControl?.onPlay || (() => {})}
-              onPause={onAnimationControl?.onPause || (() => {})}
-              onStop={onAnimationControl?.onStop || (() => {})}
-              onAnimationChange={onAnimationControl?.onAnimationChange || (() => {})}
-              onTimeChange={onAnimationControl?.onTimeChange || (() => {})}
-              onSpeedChange={onAnimationControl?.onSpeedChange || (() => {})}
-            />
           )}
         </div>
       )}

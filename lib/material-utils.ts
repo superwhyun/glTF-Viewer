@@ -159,16 +159,16 @@ export async function getTextureInfo(texture: THREE.Texture, mapType: string, ma
 
   // Debug logging in development - only once per texture
   if (process.env.NODE_ENV === 'development' && !texture.userData?.debugLogged) {
-    console.log('Processing texture:', {
-      name: info.name,
-      mapType,
-      hasSource: !!texture.source,
-      hasImage: !!texture.image,
-      sourceType: texture.source?.data?.constructor?.name,
-      imageType: texture.image?.constructor?.name,
-      width: info.width,
-      height: info.height
-    })
+    // console.log('Processing texture:', {
+    //   name: info.name,
+    //   mapType,
+    //   hasSource: !!texture.source,
+    //   hasImage: !!texture.image,
+    //   sourceType: texture.source?.data?.constructor?.name,
+    //   imageType: texture.image?.constructor?.name,
+    //   width: info.width,
+    //   height: info.height
+    // })
     texture.userData = texture.userData || {}
     texture.userData.debugLogged = true
   }

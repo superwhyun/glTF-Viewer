@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react"
 import { useThree } from "@react-three/fiber"
+import { useEnvironment } from "@react-three/drei"
 import * as THREE from "three"
 
 interface SceneLightingProps {
@@ -20,6 +21,19 @@ export function SceneLighting({
   const ambientRef = useRef<THREE.AmbientLight>(null)
   const directionalRef = useRef<THREE.DirectionalLight>(null)
   const { scene } = useThree()
+  
+  // Use environment map if enabled
+  const envMap = useEnvironment({ preset: environmentEnabled ? 'city' : undefined })
+  
+  useEffect(() => {
+    if (environmentEnabled && envMap) {
+      scene.environment = envMap
+      scene.background = null // Don't use as background, only for lighting
+    } else {
+      scene.environment = null
+      scene.background = null
+    }
+  }, [scene, envMap, environmentEnabled])
 
   // Convert color temperature to RGB color
   const temperatureToColor = (kelvin: number): THREE.Color => {

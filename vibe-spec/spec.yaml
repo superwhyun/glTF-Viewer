@@ -18,6 +18,7 @@ tech_stack:
     - "Three.js"
     - "@react-three/fiber"
     - "@react-three/drei"
+    - "@pixiv/three-vrm (planned)" # VRM 1.0 지원
   development:
     - "Next.js"
     - "pnpm"
@@ -28,11 +29,12 @@ features:
   core:
     - id: "file-upload"
       name: "glTF 파일 업로드"
-      description: "드래그 앤 드롭 또는 파일 선택을 통한 glTF/GLB/VRM 파일 업로드"
+      description: "드래그 앤 드롭 또는 파일 선택을 통한 glTF/GLB/VRM 파일 업로드 (자동 애니메이션 재생)"
       status: "implemented"
       priority: "completed"
       updates:
         - "2025-01-20: VRM 파일 파싱 지원 추가 - GLB 포맷의 JSON 청크 추출"
+        - "2025-05-18: VRM 파일 형식 지원 명시 및 자동 애니메이션 재생 추가"
       
     - id: "3d-viewer"
       name: "3D 모델 뷰어"
@@ -116,25 +118,39 @@ features:
     - id: "performance-display"
       name: "성능 모니터링"
       description: "FPS, 메모리 사용량, 렌더링 통계 실시간 표시"
-      status: "planned"
+      status: "disabled"
       priority: "low"
       components:
         - "FPSCounter"
         - "MemoryMonitor"
         - "RenderStats"
         - "OptimizationSuggestions"
+      updates:
+        - "2025-05-18: 성능 모니터링 기본 비활성화 - 불필요한 리소스 사용 방지"
 
   animation_controls:
     - id: "animation-player"
       name: "애니메이션 제어"
       description: "재생/일시정지, 속도 조절, 프레임별 이동"
-      status: "planned"
+      status: "implemented"
       priority: "high"
       components:
         - "AnimationPlayer"
         - "TimelineController"
         - "SpeedControls"
         - "FrameNavigation"
+      updates:
+        - "2025-05-18: 애니메이션 재생 문제 해결 - Three.js LoopRepeat 상수 사용"
+        - "2025-05-18: 씬 클론 문제 해결 - 원본 씬으로 애니메이션 믹서 생성"
+        - "2025-05-18: 반복 초기화 문제 근본 해결 - useEffect 의존성 최적화"
+        - "2025-05-18: 콜백 함수 참조 안정화 - 무한 재렌더링 방지"
+        - "2025-05-18: 애니메이션 액션 설정 순서 개선 - 안정적인 재생 보장"
+        - "2025-05-18: mixer.update 중복 호출 제거 및 프레임 루프 최적화"
+        - "2025-05-18: 모델 전환 시 애니메이션 상태 완전 초기화 - 이전 모델 애니메이션 잔존 문제 해결"
+        - "2025-05-18: 디버그 로그 제거 및 자동 애니메이션 재생 - 모델 로딩 시 첫 번째 애니메이션 자동 시작"
+        - "2025-05-18: 초기화 순서 문제 해결 - playAnimation 의존성 제거로 ReferenceError 방지"
+        - "2025-05-18: 외부 애니메이션 파일 로딩 기능 - Animation Player에 드랍존 추가하여 별도 애니메이션 적용"
+        - "2025-05-18: VRMA 파일 형식 지원 추가 및 웹페이지 타이틀 GLTF Viewer로 변경"
 
   export_tools:
     - id: "screenshot-export"
@@ -147,6 +163,28 @@ features:
         - "ExportOptions"
         - "QualitySettings"
 
+  vrm_support:
+    - id: "three-vrm-integration"
+      name: "Three-vrm 라이브러리 통합"
+      description: "@pixiv/three-vrm을 사용한 VRM 1.0 완전 지원"
+      status: "planned"
+      priority: "high"
+      components:
+        - "VRMLoader"
+        - "VRMMetadataDisplay"
+        - "VRMExpressionControls"
+        - "VRMLookAtControls"
+        
+    - id: "vrma-native-support"
+      name: "VRMA 네이티브 지원"
+      description: "VRM Animation 파일 전용 로더 및 재생기"
+      status: "planned"
+      priority: "high"
+      components:
+        - "VRMALoader"
+        - "VRMAPlayer"
+        - "VRMATimeline"
+        - "VRMABlending"
   comparison_tools:
     - id: "model-comparison"
       name: "모델 비교 도구"
@@ -168,13 +206,36 @@ components:
       size_limit: "1KB"
       status: "implemented"
       
-    - name: "ModelViewer"
-      path: "components/model-viewer.tsx"
-      description: "3D 모델 렌더링 및 인터랙션 처리"
+    - name: "Model"
+      path: "components/model/model.tsx"
+      description: "최적화된 3D 모델 렌더링 (WebGL 에러 해결, 안전한 텍스처 처리)"
       size_limit: "1KB"
       status: "implemented"
-      
-    - name: "ThemeProvider"
+      updates:
+        - "2025-05-18: 성능 최적화 구현 - 씬 클론, 지오메트리 최적화, 재질 캐싱"
+        - "2025-05-18: WebGL 텍스처 에러 해결 - sRGB 포맷 및 미프맵 문제 수정"
+        - "2025-05-18: 안전한 텍스처 최적화 - 포맷별 적절한 필터링 적용"
+        - "2025-05-18: Three.js 상수 오타 수정 - ClampToEdgeWrapping 정정"
+        - "2025-05-18: 애니메이션 지원 개선 - 애니메이션 모델은 원본 씬 사용"
+        - "2025-05-18: 반복 초기화 문제 해결 - useEffect 의존성 최적화 및 믹서 중복 생성 방지"
+        - "2025-05-18: 자동 모델 정렬 통합 - 바닥 고정 및 중앙 배치 옵션"
+        - "2025-05-18: 모델 변경 시 애니메이션 믹서 정리 - URL 변경을 감지하여 믹서 리셋"
+    - name: "ModelViewer"
+      path: "components/model-viewer.tsx"
+      description: "고성능 3D 모델 뷰어 (자동 정렬, 관성 제거, 테마별 배경색)"
+      size_limit: "1KB"
+      status: "implemented"
+      updates:
+        - "2025-05-18: Canvas WebGL 설정 최적화 - powerPreference: high-performance"
+        - "2025-05-18: frameloop demand 모드로 불필요한 렌더링 방지"
+        - "2025-05-18: OrbitControls 관성(damping) 완전 제거로 즉시 반응"
+        - "2025-05-18: 테마별 배경색 적용 - 다크/라이트 모드 지원"
+        - "2025-05-18: 자동 모델 정렬 - 바닥 고정 및 중앙 배치"
+        - "2025-05-18: Stage 컴포넌트 제거로 검은색 바닥 큐브 완전 제거"
+        - "2025-05-18: Canvas onCreated로 직접 배경색 설정 - 라이트 그레이 강제 적용"
+        - "2025-05-18: frameloop='always' 설정으로 안정적인 애니메이션 루프 보장"
+        - "2025-05-18: 성능 모니터링 UI 비활성화 - 리소스 최적화"
+        - "2025-05-18: OrbitControls 관성 제거 및 줌 범위 확장 - 즉시 반응성 개선"
       path: "components/theme-provider.tsx"
       description: "테마 관리 및 제공"
       size_limit: "1KB"
@@ -273,6 +334,41 @@ components:
       status: "implemented"
 
   rendering:
+    - name: "ModelAligner"
+      path: "components/rendering/model-aligner.tsx"
+      description: "개선된 모델 자동 정렬 - 정확한 크기 감지 및 다단계 스케일링"
+      size_limit: "1KB"
+      status: "implemented"
+      updates:
+        - "2025-05-18: 바운딩 박스 기반 바닥 고정 (Y=0)"
+        - "2025-05-18: 수평 중앙 정렬 (X, Z축 중심)"
+        - "2025-05-18: 다단계 자동 스케일링 - 매우 큰 모델(>100), 큰 모델(>20), 작은 모델(<0.1) 등"
+        - "2025-05-18: 빈 바운딩 박스 검증 및 에러 처리"
+        - "2025-05-18: 카메라 위치 최적화 - 더 나은 초기 시점"
+        
+    - name: "GroundGrid"
+      path: "components/rendering/ground-grid.tsx"
+      description: "바닥 그리드 표시 (테마별 색상 지원)"
+      size_limit: "1KB"
+      status: "implemented"
+      updates:
+    - name: "SceneBackground"
+      path: "components/rendering/scene-background.tsx"
+      description: "라이트 그레이 배경 설정 (모델 가시성 향상)"
+      size_limit: "1KB"
+      status: "implemented"
+      updates:
+        - "2025-05-18: 배경색을 라이트 그레이(#f5f5f5)로 고정 - 모든 테마에서 일관된 밝은 배경"
+        
+    - name: "GroundGrid"
+      path: "components/rendering/ground-grid.tsx"
+      description: "검은색 바닥 그리드 표시 (라이트 배경과 대비)"
+      size_limit: "1KB"
+      status: "implemented"
+      updates:
+        - "2025-05-18: 그리드 색상을 검은색으로 변경 - 밝은 배경에서 명확한 가시성"
+        - "2025-05-18: 표시/숨김 토글 지원"
+        
     - name: "WireframeToggle"
       path: "components/rendering/wireframe-toggle.tsx"
       description: "와이어프레임 모드 토글"
@@ -297,11 +393,15 @@ components:
       size_limit: "1KB"
       status: "planned"
       
-    - name: "LightingControls"
-      path: "components/rendering/lighting-controls.tsx"
-      description: "조명 설정 제어 (강도, 환경광, 환경 조명, 방향성 조명, 색온도)"
+    - name: "SceneLighting"
+      path: "components/rendering/scene-lighting.tsx"
+      description: "Stage 없는 직접 조명 시스템 (환경맵, 주변광, 방향광, 색온도)"
       size_limit: "1KB"
       status: "implemented"
+      updates:
+        - "2025-05-18: Stage 컴포넌트 의존성 제거"
+        - "2025-05-18: 직접 환경맵 처리로 배경 제거 및 조명만 적용"
+        - "2025-05-18: 색온도 기반 동적 조명 색상 계산"
 
   camera:
     - name: "PrecisionControls"
@@ -350,9 +450,11 @@ components:
   animation:
     - name: "AnimationPlayer"
       path: "components/animation/animation-player.tsx"
-      description: "애니메이션 재생 제어"
+      description: "애니메이션 재생 제어 및 외부 애니메이션 파일 로딩 (드랍존 포함)"
       size_limit: "1KB"
       status: "implemented"
+      updates:
+        - "2025-05-18: 외부 애니메이션 파일 로딩 기능 추가 - 작은 드랍존으로 GLB/VRM 애니메이션 교체"
       
     - name: "TimelineController"
       path: "components/animation/timeline-controller.tsx"
@@ -416,12 +518,45 @@ components:
       size_limit: "1KB"
       status: "planned"
 
+  vrm:
+    - name: "VRMLoader"
+      path: "components/vrm/vrm-loader.tsx"
+      description: "@pixiv/three-vrm을 사용한 VRM 1.0 로더"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "VRMMetadataDisplay"
+      path: "components/vrm/vrm-metadata-display.tsx"
+      description: "VRM 모델의 메타데이터 정보 표시"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "VRMExpressionControls"
+      path: "components/vrm/vrm-expression-controls.tsx"
+      description: "VRM 표정 제어 인터페이스"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "VRMALoader"
+      path: "components/vrm/vrma-loader.tsx" 
+      description: "VRMA 애니메이션 전용 로더"
+      size_limit: "1KB"
+      status: "planned"
+      
+    - name: "VRMAPlayer"
+      path: "components/vrm/vrma-player.tsx"
+      description: "VRMA 애니메이션 재생 제어"
+      size_limit: "1KB"
+      status: "planned"
+
   layout:
     - name: "InfoSidebar"
       path: "components/layout/info-sidebar.tsx"
-      description: "정보 패널들을 수납하는 사이드바"
+      description: "정보 패널들을 수납하는 사이드바 (Animation Player를 Lighting Controls 위로 배치)"
       size_limit: "1KB"
       status: "implemented"
+      updates:
+        - "2025-05-18: UI 순서 개선 - Animation Player를 Lighting Controls 위로 이동"
       
     - name: "ToolbarPanel"
       path: "components/layout/toolbar-panel.tsx"
@@ -456,13 +591,18 @@ todo:
     - "✅ ModelMetadata 컴포넌트 구현"
     - "✅ StructureInfo 컴포넌트 구현"
     - "✅ WireframeToggle 기능 추가"
-    - "✅ AnimationPlayer 기본 기능 구현"
+    - "✅ AnimationPlayer 기본 기능 구현 및 재생 문제 해결"
     - "✅ InfoSidebar 레이아웃 컴포넌트 구현"
-    - "✅ Information pane 이벤트 격리 (카메라 확대 문제 해결)"
-    - "✅ 카메라 리셋 문제 해결 (안정적인 3D 조작 구현)"
-    - "✅ 확장 기능 카테고리별 분류 (공식/벤더/VRM/실험적/비공식)"
-    - "✅ 재질별 가시성 토글 기능 (개별 재질 표시/숨김 제어)"
-    - "✅ 텍스처 이미지 표시 개선 (ImageBitmap 지원 및 성능 최적화)"
+    - "✅ 모델 자동 정렬 - 바닥 고정 및 중앙 배치"
+    - "✅ 검은색 바닥 큐브 완전 제거"
+    - "✅ 라이트 그레이 배경 적용"
+    - "✅ OrbitControls 관성 제거 및 즉시 반응"
+    - "✅ 성능 최적화 - WebGL 설정, 텍스처 압축, 프러스텀 컬링"
+    - "✅ 자동 애니메이션 재생 - D&D 시 첫 번째 애니메이션 자동 시작"
+    - "✅ VRM 파일 형식 지원 명시"
+    - "✅ Animation Player UI 위치 개선 - Lighting Controls 위로 이동"
+    - "✅ 디버그 로그 정리"
+    - "✅ 외부 애니메이션 파일 로딩 - Animation Player 드랍존으로 애니메이션 교체"
     
   phase_2_medium_priority:
     - "✅ SceneTreeView 트리 구조 표시"
@@ -475,6 +615,8 @@ todo:
     - "PrecisionControls 정밀 조작"
     - "CameraPresets 카메라 프리셋"
     - "ScreenshotCapture 스크린샷 기능"
+    - "Three-vrm 라이브러리 통합 - VRM 1.0 지원"
+    - "VRMA (VRM Animation) 전용 지원 - 표준 애니메이션 포맷"
     
   phase_3_low_priority:
     - "FPSCounter 성능 모니터링"
@@ -487,21 +629,26 @@ todo:
 # 구현 로드맵
 roadmap:
   v0.2.0:
-    focus: "정보 표시 기능 강화"
+    focus: "성능 최적화 및 애니메이션 시스템 완성" 
     features:
-      - "모델 메타데이터 표시"
-      - "구조 정보 패널"
-      - "기본 렌더링 옵션 (와이어프레임)"
-      - "사이드바 레이아웃"
-    deadline: "2025-06-01"
+      - "✅ 모델 자동 정렬 - 바닥 고정 및 중앙 배치"
+      - "✅ 검은색 바닥 큐브 제거 및 라이트 그레이 배경"
+      - "✅ OrbitControls 관성 제거 및 즉시 반응"
+      - "✅ AnimationPlayer 재생 문제 완전 해결"
+      - "✅ WebGL 최적화 - 텍스처 압축, 프러스텀 컬링"
+      - "✅ 성능 모니터링 UI 비활성화"
+    achieved: "2025-05-18"
     
   v0.3.0:
-    focus: "3D 조작 및 씬 그래프"
+    focus: "VRM/VRMA 지원 및 3D 조작"
     features:
+      - "Three-vrm 라이브러리 통합"
+      - "VRM 1.0 완전 지원"
+      - "VRMA 애니메이션 전용 로더"
+      - "VRM 메타데이터 표시"
       - "씬 그래프 트리 뷰어"
       - "노드 선택 및 하이라이트"
       - "고급 카메라 제어"
-      - "애니메이션 기본 제어"
     deadline: "2025-07-01"
     
   v0.4.0:
@@ -537,18 +684,21 @@ technical_considerations:
     - "대용량 모델 로딩 시 메모리 최적화"
     - "복잡한 씬의 렌더링 성능 최적화"
     - "실시간 정보 업데이트 시 UI 반응성 유지"
+    - "VRM 모델의 효율적인 렌더링 및 애니메이션 처리"
     
   usability:
     - "정보 패널의 접기/펼치기 기능"
     - "모바일 환경에서의 반응형 디자인"
     - "키보드 단축키 지원"
     - "접근성 (스크린 리더 호환)"
+    - "VRM/VRMA 파일 형식에 대한 사용자 가이드"
     
   architecture:
     - "컴포넌트 간 상태 관리 (Zustand 도입 검토)"
     - "3D 씬 데이터의 효율적 관리"
     - "플러그인 형태의 확장 가능한 구조"
     - "타입 안정성을 위한 엄격한 TypeScript 적용"
+    - "VRM/VRMA 파일 형식별 전용 파이프라인"
 
 # 품질 보증
 quality_assurance:

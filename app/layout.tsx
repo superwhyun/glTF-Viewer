@@ -2,9 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'GLTF Viewer',
+  description: 'Interactive 3D model viewer for GLTF, GLB, and VRM files',
 }
 
 export default function RootLayout({

@@ -40,7 +40,10 @@ export default function Home() {
     setAnimationTime,
     changePlaybackSpeed,
     setCurrentAnimation,
-    updateTime
+    updateTime,
+    resetAnimationState,
+    loadAnimationFile,
+    currentMixer
   } = useAnimation()
 
   // Use scene graph hook
@@ -74,6 +77,10 @@ export default function Home() {
   } = useTexture()
 
   const handleFileDrop = async (file: File) => {
+    // Reset animation state before loading new model
+    console.log('🔄 New model being loaded, resetting animation state...')
+    resetAnimationState()
+    
     // Revoke the old URL if it exists to prevent memory leaks
     if (modelUrl) {
       URL.revokeObjectURL(modelUrl)
@@ -162,6 +169,10 @@ export default function Home() {
   }
 
   const handleCloseModel = () => {
+    // Reset animation state when closing model
+    console.log('🔄 Model being closed, resetting animation state...')
+    resetAnimationState()
+    
     if (modelUrl) {
       URL.revokeObjectURL(modelUrl)
     }
@@ -197,8 +208,20 @@ export default function Home() {
   const handleLightingChange = (updates: Partial<typeof lightingConfig>) => {
     setLightingConfig(prev => ({ ...prev, ...updates }))
   }
+  // Animation controls with external animation loading
   const animationControls = {
-    onPlay: () => playAnimation(),
+    onPlay: () => {
+      if (isPlaying) {
+        pauseAnimation()
+      } else {
+        // Check if we should resume or start fresh
+        if (currentAnimation && currentTime > 0) {
+          resumeAnimation()
+        } else {
+          playAnimation()
+        }
+      }
+    },
     onPause: pauseAnimation,
     onStop: stopAnimation,
     onAnimationChange: (name: string) => {
@@ -206,7 +229,15 @@ export default function Home() {
       playAnimation(name)
     },
     onTimeChange: setAnimationTime,
-    onSpeedChange: changePlaybackSpeed
+    onSpeedChange: changePlaybackSpeed,
+    onAnimationFileDrop: async (file: File) => {
+      try {
+        await loadAnimationFile(file)
+      } catch (error) {
+        console.error('Failed to load animation file:', error)
+        // Could add a toast notification here
+      }
+    }
   }
 
   // Animation data for the sidebar
@@ -260,11 +291,11 @@ export default function Home() {
       {!modelUrl ? (
         <div className="flex-1 flex flex-col items-center justify-center p-4">
           <h1 className="text-3xl font-bold mb-6 text-center">
-            GLTF/GLB 3D Model Viewer
+            3D Model Viewer (GLTF/GLB/VRM/VRMA)
           </h1>
           <FileDropZone onFileDrop={handleFileDrop} />
           <footer className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            <p>Drag and drop a GLTF or GLB file to view it in 3D</p>
+            <p>Drag and drop a GLTF, GLB, VRM, or VRMA file to view it in 3D</p>
             <p className="mt-1">Use mouse to rotate, scroll to zoom, and right-click to pan</p>
           </footer>
         </div>
@@ -297,6 +328,9 @@ export default function Home() {
                 onAnimationUpdate={handleAnimationUpdate}
                 onSceneReady={handleSceneReady}
                 lightingConfig={lightingConfig}
+                isAnimationPlaying={isPlaying}
+                showPerformanceMonitor={false}
+                externalMixer={currentMixer}
               />
             </div>
           </div>

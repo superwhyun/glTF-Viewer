@@ -18,6 +18,8 @@ export function useFileDrop(): UseFileDropResult {
     return (
       file.name.endsWith(".gltf") ||
       file.name.endsWith(".glb") ||
+      file.name.endsWith(".vrm") ||
+      file.name.endsWith(".vrma") ||
       file.type === "model/gltf-binary" ||
       file.type === "model/gltf+json"
     )
@@ -43,7 +45,7 @@ export function useFileDrop(): UseFileDropResult {
       if (validateGltfFile(file)) {
         onFileDrop(file)
       } else {
-        setError("Please drop a GLTF or GLB file")
+        setError("Please drop a GLTF, GLB, VRM, or VRMA file")
       }
     }
   }, [])
@@ -55,7 +57,7 @@ export function useFileDrop(): UseFileDropResult {
       if (validateGltfFile(file)) {
         onFileDrop(file)
       } else {
-        setError("Please select a GLTF or GLB file")
+        setError("Please select a GLTF, GLB, VRM, or VRMA file")
       }
     }
   }, [])

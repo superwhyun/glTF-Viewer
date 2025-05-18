@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react"
-import { Play, Pause, Square, SkipBack, SkipForward, ChevronDown } from "lucide-react"
+import { useState, useMemo, useCallback } from "react"
+import { Play, Pause, Square, SkipBack, SkipForward, ChevronDown, Upload } from "lucide-react"
 
 interface AnimationPlayerProps {
   animations: Array<{ name: string; duration: number }>
@@ -13,6 +13,7 @@ interface AnimationPlayerProps {
   onAnimationChange: (name: string) => void
   onTimeChange: (time: number) => void
   onSpeedChange: (speed: number) => void
+  onAnimationFileDrop?: (file: File) => void
 }
 
 export function AnimationPlayer({
@@ -26,16 +27,19 @@ export function AnimationPlayer({
   onStop,
   onAnimationChange,
   onTimeChange,
-  onSpeedChange
+  onSpeedChange,
+  onAnimationFileDrop
 }: AnimationPlayerProps) {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false)
   const [showAnimationMenu, setShowAnimationMenu] = useState(false)
+  const [isDraggingAnimation, setIsDraggingAnimation] = useState(false)
 
   const currentAnimationData = useMemo(() => 
     animations.find(anim => anim.name === currentAnimation),
     [animations, currentAnimation]
   )
   
+  const isStaticPose = currentAnimation?.includes('Static Pose')
   const duration = currentAnimationData?.duration || 0
   const progress = useMemo(() => 
     duration > 0 ? (currentTime / duration) * 100 : 0,
@@ -50,6 +54,48 @@ export function AnimationPlayer({
 
   const speedOptions = [0.25, 0.5, 1, 1.5, 2]
 
+  // Animation file drop handlers
+  const handleAnimationDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingAnimation(true)
+  }, [])
+
+  const handleAnimationDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingAnimation(false)
+  }, [])
+
+  const handleAnimationDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDraggingAnimation(false)
+
+    if (!onAnimationFileDrop) return
+
+    const files = Array.from(e.dataTransfer.files)
+    const animationFile = files.find(file => 
+      file.name.endsWith('.glb') || 
+      file.name.endsWith('.gltf') || 
+      file.name.endsWith('.vrm') ||
+      file.name.endsWith('.vrma')
+    )
+
+    if (animationFile) {
+      onAnimationFileDrop(animationFile)
+    }
+  }, [onAnimationFileDrop])
+
+  const handleAnimationFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && onAnimationFileDrop) {
+      onAnimationFileDrop(file)
+    }
+    // Reset input value to allow same file to be selected again
+    e.target.value = ''
+  }, [onAnimationFileDrop])
+
   if (animations.length === 0) {
     return (
       <div className="p-4 border rounded-lg bg-card">
@@ -61,7 +107,35 @@ export function AnimationPlayer({
 
   return (
     <div className="p-4 border rounded-lg bg-card">
-      <h3 className="text-lg font-semibold mb-3">Animation Player</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold">Animation Player</h3>
+        
+        {/* Animation Drop Zone */}
+        {onAnimationFileDrop && (
+          <div className="relative">
+            <div
+              className={`w-8 h-8 border-2 border-dashed rounded flex items-center justify-center cursor-pointer transition-colors ${
+                isDraggingAnimation
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+              }`}
+              onDragOver={handleAnimationDragOver}
+              onDragLeave={handleAnimationDragLeave}
+              onDrop={handleAnimationDrop}
+              title="Drop animation file here or click to select"
+            >
+              <Upload className="w-4 h-4 text-gray-400" />
+              <input
+                type="file"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                accept=".glb,.gltf,.vrm,.vrma"
+                onChange={handleAnimationFileInput}
+                title="Select animation file"
+              />
+            </div>
+          </div>
+        )}
+      </div>
       
       {/* Animation Selector */}
       <div className="mb-4">
@@ -106,21 +180,38 @@ export function AnimationPlayer({
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
-        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded">
-          <div
-            className="h-full bg-blue-500 rounded transition-all duration-100"
-            style={{ width: `${progress}%` }}
+        <div className="relative">
+          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded">
+            <div
+              className="h-full bg-blue-500 rounded transition-all duration-100"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={duration}
+            step={0.01}
+            value={currentTime}
+            onChange={(e) => {
+              const newTime = parseFloat(e.target.value)
+              onTimeChange(newTime)
+            }}
+            onMouseDown={() => {
+              // Temporarily pause animation while dragging
+              if (isPlaying) {
+                onPause()
+              }
+            }}
+            onMouseUp={() => {
+              // Resume if was playing before dragging
+              if (!isPlaying && currentTime < duration) {
+                onPlay()
+              }
+            }}
+            className="absolute top-0 w-full h-2 bg-transparent appearance-none cursor-pointer opacity-0"
           />
         </div>
-        <input
-          type="range"
-          min={0}
-          max={duration}
-          step={0.01}
-          value={currentTime}
-          onChange={(e) => onTimeChange(parseFloat(e.target.value))}
-          className="w-full h-2 bg-transparent appearance-none cursor-pointer absolute -mt-2"
-        />
       </div>
 
       {/* Controls */}
