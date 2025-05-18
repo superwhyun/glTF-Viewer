@@ -15,6 +15,8 @@ interface ModelProps {
 export function Model({ url, onLoad, wireframe = false, onAnimationInit, onAnimationUpdate, onSceneReady }: ModelProps) {
   const { scene, animations } = useGLTF(url)
   const mixerRef = useRef<THREE.AnimationMixer>()
+  const lastUpdateRef = useRef<number>(0)
+  const UPDATE_INTERVAL = 1000 / 30 // 30fps for UI updates
 
   useEffect(() => {
     if (scene) {
@@ -53,12 +55,19 @@ export function Model({ url, onLoad, wireframe = false, onAnimationInit, onAnima
     }
   }, [scene, wireframe])
 
-  // Update animation mixer on each frame
+  // Update animation mixer on each frame with throttling
   useFrame((state, delta) => {
     if (mixerRef.current) {
+      // Always update mixer for smooth animation
       mixerRef.current.update(delta)
-      if (onAnimationUpdate) {
-        onAnimationUpdate()
+      
+      // Throttle UI updates to improve performance
+      const now = state.clock.getElapsedTime() * 1000
+      if (now - lastUpdateRef.current >= UPDATE_INTERVAL) {
+        if (onAnimationUpdate) {
+          onAnimationUpdate()
+        }
+        lastUpdateRef.current = now
       }
     }
   })

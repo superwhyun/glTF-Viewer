@@ -2,7 +2,7 @@ import { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { ChevronDown, ChevronRight, Package, ShieldCheck, Building, User, Flask, Code } from "lucide-react"
+import { ChevronDown, ChevronRight, Package, ShieldCheck, Building, User, Zap, Code } from "lucide-react"
 import { GLTFExtension, extractExtensionsFromModel, groupExtensionsByCategory, EXTENSION_CATEGORIES } from "@/lib/extension-utils"
 import { ExtensionItem } from "./extension-item"
 import { ExtensionDetails } from "./extension-details"
@@ -16,7 +16,7 @@ const CATEGORY_ICONS = {
   official: ShieldCheck,
   vendor: Building,
   vrm: User,
-  experimental: Flask,
+  experimental: Zap,
   unofficial: Code
 }
 

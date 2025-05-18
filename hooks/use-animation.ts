@@ -14,6 +14,8 @@ export function useAnimation() {
   const [playbackSpeed, setPlaybackSpeed] = useState(1)
   const mixerRef = useRef<any>(null)
   const actionsRef = useRef<{ [key: string]: any }>({})
+  const lastUpdateTimeRef = useRef<number>(0)
+  const UPDATE_INTERVAL = 1000 / 30 // 30 FPS update rate for UI)
 
   const initializeAnimations = useCallback((gltf: any, mixer: any) => {
     if (!gltf.animations || gltf.animations.length === 0) {
@@ -99,11 +101,16 @@ export function useAnimation() {
   }, [currentAnimation])
 
   const updateTime = useCallback(() => {
+    // Throttle updates to improve performance
+    const now = Date.now()
+    if (now - lastUpdateTimeRef.current < UPDATE_INTERVAL) return
+
     if (currentAnimation && actionsRef.current[currentAnimation] && isPlaying) {
       const action = actionsRef.current[currentAnimation]
       setCurrentTime(action.time)
+      lastUpdateTimeRef.current = now
     }
-  }, [currentAnimation, isPlaying])
+  }, [currentAnimation, isPlaying, UPDATE_INTERVAL])
 
   return {
     animations,

@@ -43,7 +43,7 @@ export const EXTENSION_CATEGORIES: Record<ExtensionCategory, ExtensionCategoryIn
     name: "Experimental",
     description: "Draft or experimental extensions",
     color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-    icon: "flask"
+    icon: "zap"
   },
   unofficial: {
     name: "Unofficial/Custom",

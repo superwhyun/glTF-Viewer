@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Play, Pause, Square, SkipBack, SkipForward, ChevronDown } from "lucide-react"
 
 interface AnimationPlayerProps {
@@ -31,9 +31,16 @@ export function AnimationPlayer({
   const [showSpeedMenu, setShowSpeedMenu] = useState(false)
   const [showAnimationMenu, setShowAnimationMenu] = useState(false)
 
-  const currentAnimationData = animations.find(anim => anim.name === currentAnimation)
+  const currentAnimationData = useMemo(() => 
+    animations.find(anim => anim.name === currentAnimation),
+    [animations, currentAnimation]
+  )
+  
   const duration = currentAnimationData?.duration || 0
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+  const progress = useMemo(() => 
+    duration > 0 ? (currentTime / duration) * 100 : 0,
+    [currentTime, duration]
+  )
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
