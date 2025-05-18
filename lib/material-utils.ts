@@ -129,11 +129,17 @@ export function analyzeMaterial(material: any): MaterialInfo {
   return info
 }
 
-export function getTextureInfo(texture: THREE.Texture, mapType: string): TextureInfo {
+export async function getTextureInfo(texture: THREE.Texture, mapType: string, materialName?: string): Promise<TextureInfo> {
+  // Create a unique name using texture UUID and map type
+  const uniqueName = texture.name || `${texture.uuid}_${mapType}`
+  const displayName = texture.name 
+    ? `${texture.name} (${formatMapType(mapType)})`
+    : `${formatMapType(mapType)} Texture`
+
   const info: TextureInfo = {
-    name: texture.name || `${mapType} Texture`,
+    name: uniqueName,
     mapType,
-    mapTypeLabel: formatMapType(mapType),
+    mapTypeLabel: displayName,
     format: getTextureFormat(texture.format),
     type: getTextureType(texture.type),
     wrapS: getWrapMode(texture.wrapS),
@@ -159,13 +165,19 @@ export function getTextureInfo(texture: THREE.Texture, mapType: string): Texture
         info.dataUrl = convertImageToDataUrl(texture.source.data)
       } else if (texture.source.data instanceof HTMLCanvasElement) {
         info.dataUrl = texture.source.data.toDataURL()
+      } else if (texture.source.data instanceof ImageData) {
+        info.dataUrl = convertImageDataToDataUrl(texture.source.data)
       } else {
-        // For other data types, we'll try to create a canvas
-        info.dataUrl = createTextureDataUrl(texture)
+        // For other data types, try to render using WebGL
+        info.dataUrl = await createTextureDataUrlFromWebGL(texture)
       }
+    } else {
+      // Fallback: create a placeholder or try to extract from texture
+      info.dataUrl = createTextureDataUrl(texture)
     }
   } catch (error) {
     console.warn('Failed to generate texture preview:', error)
+    info.dataUrl = createPlaceholderDataUrl(formatMapType(mapType))
   }
 
   return info
@@ -181,14 +193,91 @@ function convertImageToDataUrl(image: HTMLImageElement): string {
   
   try {
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
-    return canvas.toDataURL()
+    return canvas.toDataURL('image/png')
   } catch (error) {
     console.warn('Failed to convert image to data URL:', error)
     return ''
   }
 }
 
+function convertImageDataToDataUrl(imageData: ImageData): string {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return ''
+
+  canvas.width = imageData.width
+  canvas.height = imageData.height
+  ctx.putImageData(imageData, 0, 0)
+  
+  return canvas.toDataURL('image/png')
+}
+
+function createTextureDataUrlFromWebGL(texture: THREE.Texture): Promise<string> {
+  return new Promise((resolve) => {
+    // Create a temporary renderer to read texture data
+    const renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer: true })
+    const scene = new THREE.Scene()
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+    
+    // Create a plane with the texture
+    const geometry = new THREE.PlaneGeometry(2, 2)
+    const material = new THREE.MeshBasicMaterial({ map: texture })
+    const plane = new THREE.Mesh(geometry, material)
+    scene.add(plane)
+    
+    const size = 256
+    renderer.setSize(size, size)
+    renderer.render(scene, camera)
+    
+    // Extract image data from renderer
+    const canvas = renderer.domElement
+    const dataUrl = canvas.toDataURL('image/png')
+    
+    // Cleanup
+    renderer.dispose()
+    geometry.dispose()
+    material.dispose()
+    
+    resolve(dataUrl)
+  })
+}
+
 function createTextureDataUrl(texture: THREE.Texture): string {
+  // Try to access image directly
+  if (texture.image) {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return createPlaceholderDataUrl('Texture')
+
+    const size = 256
+    canvas.width = size
+    canvas.height = size
+
+    try {
+      if (texture.image instanceof HTMLImageElement || texture.image instanceof HTMLCanvasElement) {
+        ctx.drawImage(texture.image, 0, 0, size, size)
+        return canvas.toDataURL('image/png')
+      } else if (texture.image instanceof ImageData) {
+        // Scale ImageData to canvas
+        const tempCanvas = document.createElement('canvas')
+        const tempCtx = tempCanvas.getContext('2d')
+        if (tempCtx) {
+          tempCanvas.width = texture.image.width
+          tempCanvas.height = texture.image.height
+          tempCtx.putImageData(texture.image, 0, 0)
+          ctx.drawImage(tempCanvas, 0, 0, size, size)
+          return canvas.toDataURL('image/png')
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to create texture data URL:', error)
+    }
+  }
+
+  return createPlaceholderDataUrl('Texture')
+}
+
+function createPlaceholderDataUrl(label: string): string {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d')
   if (!ctx) return ''
@@ -197,16 +286,27 @@ function createTextureDataUrl(texture: THREE.Texture): string {
   canvas.width = size
   canvas.height = size
 
-  // Create a simple placeholder
-  ctx.fillStyle = '#f0f0f0'
+  // Create a gradient background
+  const gradient = ctx.createLinearGradient(0, 0, size, size)
+  gradient.addColorStop(0, '#f0f0f0')
+  gradient.addColorStop(1, '#e0e0e0')
+  
+  ctx.fillStyle = gradient
   ctx.fillRect(0, 0, size, size)
+  
+  // Add border
+  ctx.strokeStyle = '#ccc'
+  ctx.lineWidth = 2
+  ctx.strokeRect(1, 1, size - 2, size - 2)
+  
+  // Add text
   ctx.fillStyle = '#666'
-  ctx.font = '16px Arial'
+  ctx.font = 'bold 18px Arial'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('Texture', size / 2, size / 2)
+  ctx.fillText(label, size / 2, size / 2)
 
-  return canvas.toDataURL()
+  return canvas.toDataURL('image/png')
 }
 
 function getTextureFormat(format: number): string {
@@ -281,8 +381,8 @@ export function getAllMaterials(scene: any): MaterialInfo[] {
   return materialInfos
 }
 
-export function getAllTextures(scene: any): TextureInfo[] {
-  const textures: Map<THREE.Texture, string> = new Map()
+export async function getAllTextures(scene: any): Promise<TextureInfo[]> {
+  const textureMap: Map<string, { texture: THREE.Texture, mapType: string, materialName?: string }> = new Map()
   const textureInfos: TextureInfo[] = []
 
   scene.traverse((object: any) => {
@@ -299,8 +399,14 @@ export function getAllTextures(scene: any): TextureInfo[] {
         mapNames.forEach(mapName => {
           const texture = material[mapName]
           if (texture && texture.isTexture) {
-            if (!textures.has(texture)) {
-              textures.set(texture, mapName)
+            // Create unique key using texture UUID + map type
+            const key = `${texture.uuid}_${mapName}`
+            if (!textureMap.has(key)) {
+              textureMap.set(key, {
+                texture,
+                mapType: mapName,
+                materialName: material.name
+              })
             }
           }
         })
@@ -308,9 +414,31 @@ export function getAllTextures(scene: any): TextureInfo[] {
     }
   })
 
-  textures.forEach((mapType, texture) => {
-    textureInfos.push(getTextureInfo(texture, mapType))
-  })
+  // Process textures asynchronously
+  for (const { texture, mapType, materialName } of textureMap.values()) {
+    try {
+      const textureInfo = await getTextureInfo(texture, mapType, materialName)
+      textureInfos.push(textureInfo)
+    } catch (error) {
+      console.warn('Failed to process texture:', error)
+      // Add a fallback texture info
+      textureInfos.push({
+        name: texture.name || `${mapType}_texture`,
+        mapType,
+        mapTypeLabel: formatMapType(mapType),
+        format: getTextureFormat(texture.format),
+        type: getTextureType(texture.type),
+        wrapS: getWrapMode(texture.wrapS),
+        wrapT: getWrapMode(texture.wrapT),
+        magFilter: getFilterMode(texture.magFilter),
+        minFilter: getFilterMode(texture.minFilter),
+        flipY: texture.flipY,
+        generateMipmaps: texture.generateMipmaps,
+        texture,
+        dataUrl: createPlaceholderDataUrl(formatMapType(mapType))
+      })
+    }
+  }
 
   return textureInfos
 }

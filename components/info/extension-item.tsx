@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, AlertCircle, Info } from "lucide-react"
-import { GLTFExtension } from "@/lib/extension-utils"
+import { GLTFExtension, EXTENSION_LEVELS } from "@/lib/extension-utils"
 
 interface ExtensionItemProps {
   extension: GLTFExtension
@@ -23,15 +23,31 @@ export function ExtensionItem({ extension }: ExtensionItemProps) {
     return "secondary"
   }
 
+  const getLevelBadge = () => {
+    if (!extension.level) return null
+    const levelInfo = EXTENSION_LEVELS[extension.level]
+    return (
+      <Badge 
+        variant="outline" 
+        className={`text-xs ${levelInfo.color} border-current`}
+      >
+        {levelInfo.name}
+      </Badge>
+    )
+  }
+
   return (
     <div className="flex items-center justify-between p-2 rounded border bg-muted/30">
       <div className="flex items-center gap-2 min-w-0">
         {getStatusIcon()}
         <span className="text-xs font-mono truncate">{extension.name}</span>
       </div>
-      <Badge variant={getStatusColor()} className="text-xs">
-        {extension.required ? "Required" : "Used"}
-      </Badge>
+      <div className="flex items-center gap-1">
+        {getLevelBadge()}
+        <Badge variant={getStatusColor()} className="text-xs">
+          {extension.required ? "Required" : "Used"}
+        </Badge>
+      </div>
     </div>
   )
 }

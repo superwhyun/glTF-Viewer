@@ -59,7 +59,8 @@ export default function Home() {
     materials,
     selectedMaterial,
     extractMaterials,
-    selectMaterial
+    selectMaterial,
+    toggleMaterialVisibility
   } = useMaterial()
 
   // Use texture hook
@@ -85,24 +86,69 @@ export default function Home() {
     setFileSize(file.size)
 
     // Parse model data for GLB files
-    if (file.name.endsWith('.glb')) {
+    if (file.name.endsWith('.glb') || file.name.endsWith('.vrm')) {
       try {
         const arrayBuffer = await file.arrayBuffer()
-        // Basic GLB parsing for metadata
-        const dataView = new DataView(arrayBuffer)
-        const magic = dataView.getUint32(0, true)
-        const version = dataView.getUint32(4, true)
-        const length = dataView.getUint32(8, true)
         
-        if (magic === 0x46546C67) { // "glTF" magic number
-          setModelData({
-            asset: {
-              version: `${version}`
+        if (file.name.endsWith('.vrm')) {
+          // Handle VRM files (which are GLB files with VRM extensions)
+          const dataView = new DataView(arrayBuffer)
+          const magic = dataView.getUint32(0, true)
+          
+          if (magic === 0x46546C67) { // "glTF" magic number
+            // Extract JSON chunk from GLB
+            const jsonChunkLength = dataView.getUint32(12, true)
+            const jsonChunkType = dataView.getUint32(16, true)
+            
+            if (jsonChunkType === 0x4E4F534A) { // "JSON" chunk
+              const jsonData = new TextDecoder().decode(
+                arrayBuffer.slice(20, 20 + jsonChunkLength)
+              )
+              const gltfData = JSON.parse(jsonData)
+              console.log('Parsed VRM/GLB JSON data:', gltfData)
+              setModelData(gltfData)
             }
-          })
+          }
+        } else {
+          // Handle regular GLB files
+          const dataView = new DataView(arrayBuffer)
+          const magic = dataView.getUint32(0, true)
+          const version = dataView.getUint32(4, true)
+          const length = dataView.getUint32(8, true)
+          
+          if (magic === 0x46546C67) { // "glTF" magic number
+            // Try to extract JSON chunk for more detailed info
+            try {
+              const jsonChunkLength = dataView.getUint32(12, true)
+              const jsonChunkType = dataView.getUint32(16, true)
+              
+              if (jsonChunkType === 0x4E4F534A) { // "JSON" chunk
+                const jsonData = new TextDecoder().decode(
+                  arrayBuffer.slice(20, 20 + jsonChunkLength)
+                )
+                const gltfData = JSON.parse(jsonData)
+                console.log('Parsed GLB JSON data:', gltfData)
+                setModelData(gltfData)
+              } else {
+                // Fallback to basic info
+                setModelData({
+                  asset: {
+                    version: `${version}`
+                  }
+                })
+              }
+            } catch (parseError) {
+              console.warn('Could not parse GLB JSON chunk:', parseError)
+              setModelData({
+                asset: {
+                  version: `${version}`
+                }
+              })
+            }
+          }
         }
       } catch (error) {
-        console.error('Error parsing GLB file:', error)
+        console.error('Error parsing GLB/VRM file:', error)
       }
     } else if (file.name.endsWith('.gltf')) {
       try {
@@ -141,10 +187,10 @@ export default function Home() {
     updateTime()
   }, [updateTime])
 
-  const handleSceneReady = useCallback((scene: any, gltf: any) => {
+  const handleSceneReady = useCallback(async (scene: any, gltf: any) => {
     parseSceneGraph(scene, gltf)
     extractMaterials(scene)
-    extractTextures(scene)
+    await extractTextures(scene)
   }, [parseSceneGraph, extractMaterials, extractTextures])
 
   // Lighting control handlers
@@ -186,7 +232,8 @@ export default function Home() {
   const materialData = {
     materials,
     selectedMaterial,
-    onMaterialSelect: selectMaterial
+    onMaterialSelect: selectMaterial,
+    onMaterialVisibilityToggle: toggleMaterialVisibility
   }
 
   // Texture data for the sidebar

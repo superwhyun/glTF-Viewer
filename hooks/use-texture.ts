@@ -5,19 +5,25 @@ export function useTexture() {
   const [textures, setTextures] = useState<TextureInfo[]>([])
   const [selectedTexture, setSelectedTexture] = useState<string | null>(null)
 
-  const extractTextures = useCallback((scene: any) => {
+  const extractTextures = useCallback(async (scene: any) => {
     if (!scene) {
       setTextures([])
       setSelectedTexture(null)
       return
     }
 
-    const textureInfos = getAllTextures(scene)
-    setTextures(textureInfos)
-    
-    // Auto-select first texture if available
-    if (textureInfos.length > 0 && !selectedTexture) {
-      setSelectedTexture(textureInfos[0].name)
+    try {
+      const textureInfos = await getAllTextures(scene)
+      setTextures(textureInfos)
+      
+      // Auto-select first texture if available
+      if (textureInfos.length > 0 && !selectedTexture) {
+        setSelectedTexture(textureInfos[0].name)
+      }
+    } catch (error) {
+      console.error('Failed to extract textures:', error)
+      setTextures([])
+      setSelectedTexture(null)
     }
   }, [selectedTexture])
 

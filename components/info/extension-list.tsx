@@ -2,8 +2,8 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { ChevronDown, ChevronRight, Package } from "lucide-react"
-import { GLTFExtension, extractExtensionsFromModel } from "@/lib/extension-utils"
+import { ChevronDown, ChevronRight, Package, ShieldCheck, Building, User, Flask, Code } from "lucide-react"
+import { GLTFExtension, extractExtensionsFromModel, groupExtensionsByCategory, EXTENSION_CATEGORIES } from "@/lib/extension-utils"
 import { ExtensionItem } from "./extension-item"
 import { ExtensionDetails } from "./extension-details"
 
@@ -12,8 +12,17 @@ interface ExtensionListProps {
   modelData?: any
 }
 
+const CATEGORY_ICONS = {
+  official: ShieldCheck,
+  vendor: Building,
+  vrm: User,
+  experimental: Flask,
+  unofficial: Code
+}
+
 export function ExtensionList({ extensions, modelData }: ExtensionListProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['official', 'vrm']))
   
   // Extract extensions from modelData if not provided
   const extractedExtensions = extensions || extractExtensionsFromModel(modelData)
@@ -34,8 +43,18 @@ export function ExtensionList({ extensions, modelData }: ExtensionListProps) {
     )
   }
 
+  const groupedExtensions = groupExtensionsByCategory(extractedExtensions)
   const requiredExtensions = extractedExtensions.filter(ext => ext.required)
-  const usedExtensions = extractedExtensions.filter(ext => !ext.required)
+
+  const toggleCategory = (category: string) => {
+    const newExpanded = new Set(expandedCategories)
+    if (newExpanded.has(category)) {
+      newExpanded.delete(category)
+    } else {
+      newExpanded.add(category)
+    }
+    setExpandedCategories(newExpanded)
+  }
 
   return (
     <Card className="w-full">
@@ -46,7 +65,7 @@ export function ExtensionList({ extensions, modelData }: ExtensionListProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Required Extensions */}
+        {/* Required Extensions Section */}
         {requiredExtensions.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-xs font-medium text-red-600 dark:text-red-400">
@@ -58,17 +77,46 @@ export function ExtensionList({ extensions, modelData }: ExtensionListProps) {
           </div>
         )}
 
-        {/* Used Extensions */}
-        {usedExtensions.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-xs font-medium text-blue-600 dark:text-blue-400">
-              Used ({usedExtensions.length})
-            </h4>
-            {usedExtensions.map((extension) => (
-              <ExtensionItem key={extension.name} extension={extension} />
-            ))}
-          </div>
-        )}
+        {/* Category-based Extensions */}
+        {Object.entries(groupedExtensions).map(([category, categoryExtensions]) => {
+          if (categoryExtensions.length === 0) return null
+          
+          const categoryInfo = EXTENSION_CATEGORIES[category as keyof typeof EXTENSION_CATEGORIES]
+          const IconComponent = CATEGORY_ICONS[category as keyof typeof CATEGORY_ICONS]
+          const isExpanded = expandedCategories.has(category)
+          
+          return (
+            <div key={category} className="space-y-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => toggleCategory(category)}
+                className="w-full justify-between p-2 h-auto"
+              >
+                <div className="flex items-center gap-2">
+                  <IconComponent className="w-3 h-3" />
+                  <span className="text-xs font-medium">{categoryInfo.name}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${categoryInfo.color}`}>
+                    {categoryExtensions.length}
+                  </span>
+                </div>
+                {isExpanded ? (
+                  <ChevronDown className="w-3 h-3" />
+                ) : (
+                  <ChevronRight className="w-3 h-3" />
+                )}
+              </Button>
+              
+              {isExpanded && (
+                <div className="space-y-1 ml-4">
+                  {categoryExtensions.map((extension) => (
+                    <ExtensionItem key={extension.name} extension={extension} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
 
         {/* Expand/Collapse for details */}
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>

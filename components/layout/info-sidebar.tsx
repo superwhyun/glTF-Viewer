@@ -42,6 +42,7 @@ interface InfoSidebarProps {
     materials: MaterialInfo[]
     selectedMaterial: string | null
     onMaterialSelect: (materialName: string) => void
+    onMaterialVisibilityToggle?: (materialName: string) => void
   }
   textureData?: {
     textures: TextureInfo[]
@@ -149,6 +150,7 @@ export function InfoSidebar({
               materials={materialData.materials}
               selectedMaterial={materialData.selectedMaterial}
               onMaterialSelect={materialData.onMaterialSelect}
+              onMaterialVisibilityToggle={materialData.onMaterialVisibilityToggle}
             />
           )}
           

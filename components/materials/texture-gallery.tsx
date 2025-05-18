@@ -84,9 +84,9 @@ export function TextureGallery({ textures, texturesByType, selectedTexture, onTe
           ? 'grid grid-cols-2 gap-4 max-h-80 overflow-y-auto'
           : 'space-y-2 max-h-80 overflow-y-auto'
       }`}>
-        {filteredTextures.map((texture) => (
+        {filteredTextures.map((texture, index) => (
           <div
-            key={texture.name}
+            key={`${texture.name}_${index}`}
             className={`border rounded p-2 cursor-pointer transition-colors ${
               selectedTexture === texture.name ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-accent'
             }`}
@@ -101,10 +101,28 @@ export function TextureGallery({ textures, texturesByType, selectedTexture, onTe
                       src={texture.dataUrl}
                       alt={texture.name}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        // If image fails to load, replace with placeholder
+                        const target = e.target as HTMLImageElement
+                        target.style.display = 'none'
+                        const parent = target.parentElement
+                        if (parent) {
+                          parent.innerHTML = `
+                            <div class="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                              <svg class="w-8 h-8 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                              </svg>
+                              <span class="text-xs">Failed to load</span>
+                            </div>
+                          `
+                        }
+                      }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Image className="w-8 h-8 text-gray-400" />
+                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                      <Image className="w-8 h-8 mb-2" />
+                      <span className="text-xs">Loading...</span>
                     </div>
                   )}
                 </div>
@@ -151,10 +169,25 @@ export function TextureGallery({ textures, texturesByType, selectedTexture, onTe
                       src={texture.dataUrl}
                       alt={texture.name}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.style.display = 'none'
+                        const parent = target.parentElement
+                        if (parent) {
+                          parent.innerHTML = `
+                            <div class="w-full h-full flex items-center justify-center text-gray-400">
+                              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                              </svg>
+                            </div>
+                          `
+                        }
+                      }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Image className="w-4 h-4 text-gray-400" />
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <Image className="w-4 h-4" />
                     </div>
                   )}
                 </div>

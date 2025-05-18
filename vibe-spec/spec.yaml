@@ -28,9 +28,11 @@ features:
   core:
     - id: "file-upload"
       name: "glTF 파일 업로드"
-      description: "드래그 앤 드롭 또는 파일 선택을 통한 glTF/GLB 파일 업로드"
+      description: "드래그 앤 드롭 또는 파일 선택을 통한 glTF/GLB/VRM 파일 업로드"
       status: "implemented"
       priority: "completed"
+      updates:
+        - "2025-01-20: VRM 파일 파싱 지원 추가 - GLB 포맷의 JSON 청크 추출"
       
     - id: "3d-viewer"
       name: "3D 모델 뷰어"
@@ -76,7 +78,7 @@ features:
       
     - id: "material-texture-info"
       name: "재질 및 텍스처 정보"
-      description: "PBR 재질 속성과 텍스처 이미지 미리보기"
+      description: "PBR 재질 속성과 텍스처 이미지 미리보기 (React key 중복 문제 해결)"
       status: "implemented"
       priority: "medium"
       components:
@@ -84,6 +86,8 @@ features:
         - "TextureGallery"
         - "PBRVisualizer"
         - "TextureDetails"
+      updates:
+        - "2025-01-20: React key 중복 문제 해결 - 텍스처 UUID 기반 고유 키 생성"
 
   rendering_options:
     - id: "advanced-rendering"
@@ -203,9 +207,13 @@ components:
       
     - name: "ExtensionList"
       path: "components/info/extension-list.tsx"
-      description: "사용된 glTF 확장 기능 목록 표시"
+      description: "사용된 glTF 확장 기능 목록 표시 (카테고리별 분류 및 레벨 표시)"
       size_limit: "1KB"
       status: "implemented"
+      updates:
+        - "2025-01-20: VRM 관련 확장 지원 추가 및 디버깅 로그 개선"
+        - "2025-05-18: 확장 유형별 분류 구현 - 공식/벤더/VRM/실험적/비공식 카테고리"
+        - "2025-05-18: 안정성 레벨 표시 - Stable/Draft/Deprecated 구분"
 
   scene_graph:
     - name: "SceneTreeView"
@@ -235,15 +243,21 @@ components:
   materials:
     - name: "MaterialPanel"
       path: "components/materials/material-panel.tsx"
-      description: "재질 속성 정보 표시"
+      description: "재질 속성 정보 표시 및 가시성 토글 제어"
       size_limit: "1KB"
       status: "implemented"
+      updates:
+        - "2025-05-18: 재질별 가시성 토글 기능 추가 - 개별 재질 표시/숨김 제어"
       
     - name: "TextureGallery"
       path: "components/materials/texture-gallery.tsx"
-      description: "텍스처 이미지 썸네일 갤러리"
+      description: "텍스처 이미지 썸네일 갤러리 (향상된 이미지 추출 및 오류 처리)"
       size_limit: "1KB"
       status: "implemented"
+      updates:
+        - "2025-05-18: 텍스처 이미지 추출 로직 개선 - 다양한 데이터 소스 지원"
+        - "2025-05-18: 이미지 로딩 실패 시 플레이스홀더 표시"
+        - "2025-05-18: WebGL 기반 텍스처 렌더링 지원 추가"
       
     - name: "PBRVisualizer"
       path: "components/materials/pbr-visualizer.tsx"
@@ -445,6 +459,9 @@ todo:
     - "✅ InfoSidebar 레이아웃 컴포넌트 구현"
     - "✅ Information pane 이벤트 격리 (카메라 확대 문제 해결)"
     - "✅ 카메라 리셋 문제 해결 (안정적인 3D 조작 구현)"
+    - "✅ 확장 기능 카테고리별 분류 (공식/벤더/VRM/실험적/비공식)"
+    - "✅ 재질별 가시성 토글 기능 (개별 재질 표시/숨김 제어)"
+    - "✅ 텍스처 이미지 표시 개선 (WebGL 기반 렌더링 및 오류 처리)"
     
   phase_2_medium_priority:
     - "✅ SceneTreeView 트리 구조 표시"

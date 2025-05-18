@@ -6,9 +6,10 @@ interface MaterialPanelProps {
   materials: MaterialInfo[]
   selectedMaterial: string | null
   onMaterialSelect: (materialName: string) => void
+  onMaterialVisibilityToggle?: (materialName: string) => void
 }
 
-export function MaterialPanel({ materials, selectedMaterial, onMaterialSelect }: MaterialPanelProps) {
+export function MaterialPanel({ materials, selectedMaterial, onMaterialSelect, onMaterialVisibilityToggle }: MaterialPanelProps) {
   const [showMaterialList, setShowMaterialList] = useState(false)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['properties']))
 
@@ -79,24 +80,44 @@ export function MaterialPanel({ materials, selectedMaterial, onMaterialSelect }:
           {showMaterialList && (
             <div className="absolute top-full left-0 right-0 mt-1 border rounded bg-background shadow-lg z-10 max-h-40 overflow-y-auto">
               {materials.map((material) => (
-                <button
+                <div
                   key={material.name}
-                  onClick={() => {
-                    onMaterialSelect(material.name)
-                    setShowMaterialList(false)
-                  }}
-                  className={`w-full text-left p-2 text-sm hover:bg-accent flex items-center justify-between ${
+                  className={`flex items-center justify-between p-2 text-sm hover:bg-accent ${
                     selectedMaterial === material.name ? "bg-accent" : ""
                   }`}
                 >
-                  <div className="flex items-center">
+                  <button
+                    onClick={() => {
+                      onMaterialSelect(material.name)
+                      setShowMaterialList(false)
+                    }}
+                    className="flex items-center flex-1 text-left"
+                  >
                     <span className="truncate">{material.name}</span>
                     <ColorSwatch color={material.color} />
+                  </button>
+                  
+                  <div className="flex items-center gap-2 ml-2">
+                    <span className="text-xs text-muted-foreground">
+                      {material.type}
+                    </span>
+                    {onMaterialVisibilityToggle && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onMaterialVisibilityToggle(material.name)
+                        }}
+                        className="p-1 rounded hover:bg-muted"
+                        title={`${material.visible ? 'Hide' : 'Show'} ${material.name}`}
+                      >
+                        {material.visible ? 
+                          <Eye className="w-3 h-3 text-blue-500" /> : 
+                          <EyeOff className="w-3 h-3 text-gray-400" />
+                        }
+                      </button>
+                    )}
                   </div>
-                  <span className="text-xs text-muted-foreground ml-2">
-                    {material.type}
-                  </span>
-                </button>
+                </div>
               ))}
             </div>
           )}
@@ -127,10 +148,24 @@ export function MaterialPanel({ materials, selectedMaterial, onMaterialSelect }:
                 
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Visible:</span>
-                  <div className="flex items-center">
-                    {selectedMaterialInfo.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  <button
+                    onClick={() => {
+                      if (onMaterialVisibilityToggle && selectedMaterialInfo) {
+                        onMaterialVisibilityToggle(selectedMaterialInfo.name)
+                      }
+                    }}
+                    disabled={!onMaterialVisibilityToggle}
+                    className={`flex items-center p-1 rounded hover:bg-accent transition-colors ${
+                      !onMaterialVisibilityToggle ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                    title={`${selectedMaterialInfo.visible ? 'Hide' : 'Show'} material`}
+                  >
+                    {selectedMaterialInfo.visible ? 
+                      <Eye className="w-4 h-4 text-blue-500" /> : 
+                      <EyeOff className="w-4 h-4 text-gray-400" />
+                    }
                     <span className="ml-1">{formatValue(selectedMaterialInfo.visible)}</span>
-                  </div>
+                  </button>
                 </div>
 
                 {selectedMaterialInfo.color && (
@@ -206,8 +241,8 @@ export function MaterialPanel({ materials, selectedMaterial, onMaterialSelect }:
               
               {expandedSections.has('textures') && (
                 <div className="mt-2 space-y-2 text-sm">
-                  {Object.entries(selectedMaterialInfo.maps).map(([mapName, mapValue]) => (
-                    <div key={mapName} className="flex justify-between items-center">
+                  {Object.entries(selectedMaterialInfo.maps).map(([mapName, mapValue], index) => (
+                    <div key={`${mapName}_${index}`} className="flex justify-between items-center">
                       <span className="text-muted-foreground">{formatMapType(mapName)}:</span>
                       <span className="font-medium text-xs truncate max-w-32" title={mapValue}>
                         {mapValue}
