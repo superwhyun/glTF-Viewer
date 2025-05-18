@@ -112,7 +112,12 @@ export default function ModelViewer({
       <Canvas 
         shadows 
         dpr={[1, Math.min(window.devicePixelRatio, 2)]} 
-        camera={{ fov: 45, near: 0.1, far: 1000 }} 
+        camera={{ 
+          fov: 45, 
+          near: 0.1, 
+          far: 1000,
+          position: [10, 10, 10] // Default camera position
+        }} 
         className="w-full h-full"
         gl={{ 
           powerPreference: "high-performance",
@@ -122,16 +127,17 @@ export default function ModelViewer({
           depth: true
         }}
         frameloop="always"
-        onCreated={({ scene, gl, clock }) => {
+        onCreated={({ scene, gl, camera }) => {
           // Set light gray background directly
           scene.background = new THREE.Color(0xf5f5f5)
           gl.setClearColor(0xf5f5f5, 1)
-          console.log('🎨 Canvas created with frameloop: always')
-          console.log('🕐 Clock created:', clock)
-          console.log('🔍 GL context info:', {
-            powerPreference: gl.getContextAttributes()?.powerPreference,
-            antialias: gl.getContextAttributes()?.antialias
-          })
+          
+          // Set default camera position
+          camera.position.set(10, 10, 10)
+          camera.lookAt(0, 0, 0)
+          camera.updateProjectionMatrix()
+          
+          console.log('🎨 Canvas created with default camera position:', camera.position)
         }}
       >
         <Suspense fallback={null}>
